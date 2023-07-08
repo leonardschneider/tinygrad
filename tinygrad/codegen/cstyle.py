@@ -138,7 +138,7 @@ def uops_to_cstyle(uops:List[UOp], bufs:List[Union[LocalBuffer,LazyBuffer]], lan
             val = f"vload_half({args.idx.render(render_cl)}, {bufnames[args.i]})"
         else:
           if newvar.dtype == dtypes._float4:
-            float4_args = ", ".join([f"{bufnames[args.i]}[{j}]" for j in range(4)])
+            float4_args = ", ".join([f"(float)({bufnames[args.i]}[{j}] == {j+1})" for j in range(4)])
             val = f"({newvar.dtype.name})"+"{"+float4_args+"}"
             #val = f"({newvar.dtype.name})(*(({lang.smem_prefix if isinstance(bufs[args.i], LocalBuffer) else lang.buffer_prefix}packed_{bufs[args.i].dtype.name}4*)({bufnames[args.i]}+{args.idx.render(render_cl)})))"
           else:
