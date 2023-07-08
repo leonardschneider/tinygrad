@@ -139,7 +139,7 @@ def uops_to_cstyle(uops:List[UOp], bufs:List[Union[LocalBuffer,LazyBuffer]], lan
         else:
           if newvar.dtype == dtypes._float4:
             float4_args = ", ".join([f"(float)*({bufnames[args.i]}+{args.idx.render(render_cl)}+{j})" for j in range(4) ])
-            val = f"{newvar.dtype.name}({float4_args})"
+            val = "{"+float4_args+"}"
           else:
             val = f"{bufnames[args.i]}[{args.idx.render(render_cl)}]"
       # NOTE: if min and max are both 0, it should be a CONST in the Linearizer
