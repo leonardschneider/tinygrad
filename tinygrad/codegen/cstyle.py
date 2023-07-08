@@ -16,6 +16,7 @@ class CStyleLanguage(NamedTuple):
   kernel_prefix: str = ""
   buffer_prefix: str = ""
   buffer_suffix: str = ""
+  buffer_ctor: Callable[[str, int], str] = lambda x: x
   smem_prefix: str = ""
   barrier: str = ""
   gid: List[str] = []
@@ -138,9 +139,7 @@ def uops_to_cstyle(uops:List[UOp], bufs:List[Union[LocalBuffer,LazyBuffer]], lan
             val = f"vload_half({args.idx.render(render_cl)}, {bufnames[args.i]})"
         else:
           if newvar.dtype == dtypes._float4:
-            float4_args = ", ".join([f"(float)({bufnames[args.i]}[{j}])" for j in range(4)])
-            val = f"({newvar.dtype.name})"+"{"+float4_args+"}"
-            #val = f"({newvar.dtype.name})(*(({lang.smem_prefix if isinstance(bufs[args.i], LocalBuffer) else lang.buffer_prefix}packed_{bufs[args.i].dtype.name}4*)({bufnames[args.i]}+{args.idx.render(render_cl)})))"
+            val = f"({newvar.dtype.name})(*(({lang.smem_prefix if isinstance(bufs[args.i], LocalBuffer) else lang.buffer_prefix}{bufs[args.i].dtype.name}4*)({bufnames[args.i]}+{args.idx.render(render_cl)})))"
           else:
             val = f"{bufnames[args.i]}[{args.idx.render(render_cl)}]"
       # NOTE: if min and max are both 0, it should be a CONST in the Linearizer
@@ -175,7 +174,7 @@ def uops_to_cstyle(uops:List[UOp], bufs:List[Union[LocalBuffer,LazyBuffer]], lan
                ("const " if i > 0 else "")+lang.buffer_prefix+x.dtype.name+"*"+lang.buffer_suffix) for i,x in enumerate(bufs)
                if not isinstance(x, LocalBuffer) and not isinstance(x.realized, RawConst)]
   prg = ''.join([f"{lang.kernel_prefix} void KERNEL_NAME_PLACEHOLDER(",] +
-    [', '.join([f'{t} {bufnames[i]}' for i,t in buftypes] + lang.extra_args)] +
+    [', '.join([f'{t} {lang.buffer_ctor(bufnames[i], i)}' for i,t in buftypes] + lang.extra_args)] +
     [") {\n"] + list(prekernel) + ['\n'.join(kernel), "\n}"])
 
   if lang.half_prekernel and any(x.dtype == dtypes.float16 for x in bufs): prg = ''.join([f"{lang.half_prekernel}", "\n", prg])

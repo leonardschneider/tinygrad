@@ -75,7 +75,10 @@ class MetalProgram:
 
 class MetalCodegen(CStyleCodegen):
   lang = CStyleLanguage(
-    kernel_prefix = "#include <metal_stdlib>\nusing namespace metal;\nkernel", buffer_prefix = "device ", smem_prefix = "threadgroup ",
+    kernel_prefix = "#include <metal_stdlib>\nusing namespace metal;\nkernel",
+    buffer_prefix = "device ",
+    buffer_ctor = lambda b, idx: f"{b} [[buffer({idx})]] ",
+    smem_prefix = "threadgroup ",
     barrier = "threadgroup_barrier(mem_flags::mem_threadgroup);", float4 = "float4",
     gid = [f"gid.{chr(120+i)}" for i in range(3)], lid = [f"lid.{chr(120+i)}" for i in range(3)],
     extra_args = ['uint3 gid [[threadgroup_position_in_grid]]', 'uint3 lid [[thread_position_in_threadgroup]]'])
