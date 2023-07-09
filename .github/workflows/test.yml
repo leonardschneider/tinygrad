@@ -47,7 +47,7 @@ jobs:
     - name: Install Dependencies
       run: pip install -e '.[metal,testing]'
     - name: Install applegpu in disassemblers
-      uses: sudosubin/git-clone-action@v1
+      uses: actions/checkout@v3
       with:
         repository: 'dougallj/applegpu'
         path: 'disassemblers'
