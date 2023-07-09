@@ -16,6 +16,7 @@ class _METAL:
     self.mtl_queue = self.device.newCommandQueue()
   # TODO: is there a better way to do this?
   def synchronize(self):
+    print(f"cbuf size: {len(self.mtl_buffers_in_flight)}")
     for cbuf in self.mtl_buffers_in_flight: cbuf.waitUntilCompleted()
     self.mtl_buffers_in_flight.clear()
 METAL = _METAL()
@@ -28,7 +29,9 @@ class RawMetalBuffer(RawBufferMapped):
     super().__del__()
   def _buffer(self):
     METAL.synchronize()
-    return self._buf.contents().as_buffer(self._buf.length())
+    res = self._buf.contents().as_buffer(self._buf.length())
+    print(f"RawMetalBuffer output: {bytes(res[0:8])}")
+    return res
 
 def unwrap(x):
   ret, err = x
@@ -59,6 +62,7 @@ class MetalProgram:
     self.pipeline_state = unwrap(METAL.device.newComputePipelineStateWithFunction_error_(self.fxn, None))
 
   def __call__(self, global_size, local_size, *bufs, wait=False):
+    print(f"MetalProgram call: global_size={global_size} local_size={local_size} wait={wait}")
     assert prod(local_size) <= self.pipeline_state.maxTotalThreadsPerThreadgroup(), f"local size {local_size} bigger than {self.pipeline_state.maxTotalThreadsPerThreadgroup()} with exec width {self.pipeline_state.threadExecutionWidth()} memory length {self.pipeline_state.staticThreadgroupMemoryLength()}"
     command_buffer = METAL.mtl_queue.commandBuffer()
     encoder = command_buffer.computeCommandEncoder()
@@ -71,6 +75,7 @@ class MetalProgram:
       command_buffer.waitUntilCompleted()
       return command_buffer.GPUEndTime() - command_buffer.GPUStartTime()
     else:
+      print(f"Appending cbuf")
       METAL.mtl_buffers_in_flight.append(command_buffer)
 
 class MetalCodegen(CStyleCodegen):
