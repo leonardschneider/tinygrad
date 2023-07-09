@@ -27,10 +27,12 @@ class RawMetalBuffer(RawBufferMapped):
   def __del__(self):
     self._buf.release()
     super().__del__()
-  def _buffer(self):
-    METAL.synchronize()
+  def _buffer(self, write=False):
+    if not write:
+      print("Write buffer")
+      METAL.synchronize()
     res = self._buf.contents().as_buffer(self._buf.length())
-    print(f"RawMetalBuffer output: {bytes(res[0:8])}")
+    print(f"RawMetalBuffer: {bytes(res[0:8]).hex()}")
     return res
 
 def unwrap(x):
