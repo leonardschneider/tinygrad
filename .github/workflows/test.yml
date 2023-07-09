@@ -46,15 +46,11 @@ jobs:
         python-version: 3.8
     - name: Install Dependencies
       run: pip install -e '.[metal,testing]'
-    - name: Install applegpu disassembler
-      uses: GuillaumeFalourd/clone-github-repo-action@v2.1
+    - name: Install applegpu in disassemblers
+      uses: sudosubin/git-clone-action@v1
       with:
-        depth: 1
-        owner: 'dougallj'
-        repository: 'applegpu'
-    - name: Move applegpu in dissasemblers folder
-      run: |
-        mv applegpu disassemblers/
+        repository: 'dougallj/applegpu'
+        path: 'disassemblers'
     - name: Test LLaMA compile speed
       run: PYTHONPATH="." METAL=1 python3 test/external/external_test_speed_llama.py
     - name: Run dtype test # temp narrowing down a single issue
