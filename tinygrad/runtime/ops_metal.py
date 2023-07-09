@@ -40,7 +40,7 @@ class MetalProgram:
     if METAL_XCODE:
       air = subprocess.check_output(['xcrun', '-sdk', 'macosx', 'metal', '-target', '-target air64-apple-macos13', '-x', 'metal', '-c', '-', '-o', '-'], input=prg.encode('utf-8'))
       # NOTE: if you run llvm-dis on "air" you can see the llvm bytecode
-      lib = subprocess.check_output(['xcrun', '-sdk', 'macosx', 'metallib', '-', '-o', '-'], input=air)
+      lib = subprocess.check_output(['xcrun', '-sdk', 'macosx', 'metallib', '-target', '-target air64-apple-macos13', '-', '-o', '-'], input=air)
       data = libdispatch.dispatch_data_create(lib, len(lib), None, None)
       self.library = unwrap(METAL.device.newLibraryWithData_error_(data, None))
     else:
