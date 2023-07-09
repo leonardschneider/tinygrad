@@ -16,7 +16,6 @@ class _METAL:
     self.mtl_queue = self.device.newCommandQueue()
   # TODO: is there a better way to do this?
   def synchronize(self):
-    print(f"cbuf size: {len(self.mtl_buffers_in_flight)}")
     for cbuf in self.mtl_buffers_in_flight: cbuf.waitUntilCompleted()
     self.mtl_buffers_in_flight.clear()
 METAL = _METAL()
@@ -27,13 +26,9 @@ class RawMetalBuffer(RawBufferMapped):
   def __del__(self):
     self._buf.release()
     super().__del__()
-  def _buffer(self, write=False):
-    if not write:
-      print("Write buffer")
-      METAL.synchronize()
-    res = self._buf.contents().as_buffer(self._buf.length())
-    print(f"RawMetalBuffer: {bytes(res[0:8]).hex()}")
-    return res
+  def _buffer(self):
+    METAL.synchronize()
+    return self._buf.contents().as_buffer(self._buf.length())
 
 def unwrap(x):
   ret, err = x
@@ -64,7 +59,6 @@ class MetalProgram:
     self.pipeline_state = unwrap(METAL.device.newComputePipelineStateWithFunction_error_(self.fxn, None))
 
   def __call__(self, global_size, local_size, *bufs, wait=False):
-    print(f"MetalProgram call: global_size={global_size} local_size={local_size} wait={wait}")
     assert prod(local_size) <= self.pipeline_state.maxTotalThreadsPerThreadgroup(), f"local size {local_size} bigger than {self.pipeline_state.maxTotalThreadsPerThreadgroup()} with exec width {self.pipeline_state.threadExecutionWidth()} memory length {self.pipeline_state.staticThreadgroupMemoryLength()}"
     command_buffer = METAL.mtl_queue.commandBuffer()
     encoder = command_buffer.computeCommandEncoder()
@@ -77,15 +71,11 @@ class MetalProgram:
       command_buffer.waitUntilCompleted()
       return command_buffer.GPUEndTime() - command_buffer.GPUStartTime()
     else:
-      print(f"Appending cbuf")
       METAL.mtl_buffers_in_flight.append(command_buffer)
 
 class MetalCodegen(CStyleCodegen):
   lang = CStyleLanguage(
-    kernel_prefix = "#include <metal_stdlib>\nusing namespace metal;\nkernel",
-    buffer_prefix = "device ",
-    buffer_ctor = lambda b, idx: f"{b} [[buffer({idx})]] ",
-    smem_prefix = "threadgroup ",
+    kernel_prefix = "#include <metal_stdlib>\nusing namespace metal;\nkernel", buffer_prefix = "device ", smem_prefix = "threadgroup ",
     barrier = "threadgroup_barrier(mem_flags::mem_threadgroup);", float4 = "float4",
     gid = [f"gid.{chr(120+i)}" for i in range(3)], lid = [f"lid.{chr(120+i)}" for i in range(3)],
     extra_args = ['uint3 gid [[threadgroup_position_in_grid]]', 'uint3 lid [[thread_position_in_threadgroup]]'])
