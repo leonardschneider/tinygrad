@@ -2,6 +2,8 @@
 import os, subprocess, pathlib
 import Metal, Cocoa, libdispatch # type: ignore
 from typing import List, Any
+
+import numpy as np
 from tinygrad.codegen.cstyle import CStyleCodegen, CStyleLanguage
 from tinygrad.helpers import prod, getenv, DEBUG, DType
 from tinygrad.ops import Compiled
@@ -26,6 +28,9 @@ class RawMetalBuffer(RawBufferMapped):
   def __del__(self):
     self._buf.release()
     super().__del__()
+  def _copyin(self, x: np.ndarray) -> None:
+    super()._copyin(x)
+    self._buf.didModifyRange_(Cocoa.NSRange(location=0, length=self.size))
   def _buffer(self):
     METAL.synchronize()
     return self._buf.contents().as_buffer(self._buf.length())
