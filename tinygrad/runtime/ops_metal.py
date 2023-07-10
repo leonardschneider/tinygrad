@@ -47,7 +47,8 @@ class MetalProgram:
       # NOTE: if you run llvm-dis on "air" you can see the llvm bytecode
       if DEBUG >= 5:
         print("**** LLVM disassembly ****")
-        dis = subprocess.run(['llvm-dis'], input=air, stdout=subprocess.PIPE).stdout.decode('utf-8')
+        prefix = subprocess.run(['brew', '--prefix', 'llvm'], stdout=subprocess.PIPE).stdout.decode('utf-8').rstrip()
+        dis = subprocess.run([f'{prefix}/bin/llvm-dis'], input=air, stdout=subprocess.PIPE).stdout.decode('utf-8')
         print(dis)
         print("**** End of LLVM disassembly ****")
       lib = subprocess.check_output(['xcrun', '-sdk', 'macosx', 'metallib', '-', '-o', '-'], input=air)
