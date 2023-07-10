@@ -55,17 +55,25 @@ class MetalProgram:
       lib = subprocess.check_output(['xcrun', '-sdk', 'macosx', 'metallib', '-', '-o', '-'], input=air)
       data = libdispatch.dispatch_data_create(lib, len(lib), None, None)
       self.library = unwrap(METAL.device.newLibraryWithData_error_(data, None))
+      self.fxn = self.library.newFunctionWithName_(name)
+      if DEBUG >= 5:
+        print(f"Disassembling shader binary for compute function: {name}")
+        with open("/tmp/shader.metallib", "wb") as f:
+          f.write(lib) 
+        subprocess.run(['metal-tt', '/tmp/shader.metallib', f'{pathlib.Path(__file__).parent}/descriptors.mtlp-json', '-o', '/tmp/shader.bin'])
+
     else:
       options = Metal.MTLCompileOptions.alloc().init()
       self.library = unwrap(METAL.device.newLibraryWithSource_options_error_(prg, options, None))
-    self.fxn = self.library.newFunctionWithName_(name)
-    # hacks to disassemble shader
-    if DEBUG >= 5:
-      arc = unwrap(METAL.device.newBinaryArchiveWithDescriptor_error_(Metal.MTLBinaryArchiveDescriptor.alloc().init(), None))
-      desc = Metal.MTLComputePipelineDescriptor.alloc().init()
-      desc.setComputeFunction_(self.fxn)
-      unwrap(arc.addComputePipelineFunctionsWithDescriptor_error_(desc, None))
-      unwrap(arc.serializeToURL_error_(Cocoa.NSURL.URLWithString_("file:///tmp/shader.bin"), None))
+      self.fxn = self.library.newFunctionWithName_(name)
+      # hacks to disassemble shader
+      if DEBUG >= 5:
+        arc = unwrap(METAL.device.newBinaryArchiveWithDescriptor_error_(Metal.MTLBinaryArchiveDescriptor.alloc().init(), None))
+        desc = Metal.MTLComputePipelineDescriptor.alloc().init()
+        desc.setComputeFunction_(self.fxn)
+        unwrap(arc.addComputePipelineFunctionsWithDescriptor_error_(desc, None))
+        unwrap(arc.serializeToURL_error_(Cocoa.NSURL.URLWithString_("file:///tmp/shader.bin"), None))
+    if DEBUG >=5:
       # clone https://github.com/dougallj/applegpu.git in tinygrad/disassemblers
       kernel = subprocess.run(
         ['python3', 'compiler_explorer.py', '/tmp/shader.bin'],
