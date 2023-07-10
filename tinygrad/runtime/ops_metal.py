@@ -43,6 +43,8 @@ def unwrap(x):
 class MetalProgram:
   def __init__(self, name:str, prg:str):
     if METAL_XCODE:
+      arch = subprocess.check_output(['xcrun', 'metal-arch']).decode('utf-8').rstrip()
+      if DEBUG >= 5: print(f"Metal arch: {arch}")
       air = subprocess.check_output(['xcrun', '-sdk', 'macosx', 'metal', '-target', 'air64-apple-macos13', '-x', 'metal', '-c', '-', '-o', '-'], input=prg.encode('utf-8'))
       # NOTE: if you run llvm-dis on "air" you can see the llvm bytecode
       if DEBUG >= 5:
@@ -60,7 +62,7 @@ class MetalProgram:
         print(f"Disassembling shader binary for compute function: {name}")
         with open("/tmp/shader.metallib", "wb") as f:
           f.write(lib) 
-        subprocess.run(['xcrun', '-sdk', 'macosx', 'metal-tt', '/tmp/shader.metallib', f'{pathlib.Path(__file__).parent}/descriptors.mtlp-json', '-o', '/tmp/shader.bin'])
+        subprocess.run(['xcrun', '-sdk', 'macosx', 'metal-tt', '-arch', arch, '/tmp/shader.metallib', f'{pathlib.Path(__file__).parent}/descriptors.mtlp-json', '-o', '/tmp/shader.bin'])
 
     else:
       options = Metal.MTLCompileOptions.alloc().init()
