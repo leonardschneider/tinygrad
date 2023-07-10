@@ -50,7 +50,7 @@ jobs:
       uses: actions/checkout@v3
       with:
         repository: 'dougallj/applegpu'
-        path: 'disassemblers'
+        path: 'disassemblers/applegpu'
     - name: Test LLaMA compile speed
       run: PYTHONPATH="." METAL=1 python3 test/external/external_test_speed_llama.py
     - name: Run dtype test # temp narrowing down a single issue
