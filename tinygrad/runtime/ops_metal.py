@@ -60,7 +60,7 @@ class MetalProgram:
         print(f"Disassembling shader binary for compute function: {name}")
         with open("/tmp/shader.metallib", "wb") as f:
           f.write(lib) 
-        subprocess.run(['metal-tt', '/tmp/shader.metallib', f'{pathlib.Path(__file__).parent}/descriptors.mtlp-json', '-o', '/tmp/shader.bin'])
+        subprocess.run(['xcrun', '-sdk', 'macosx', 'metal-tt', '/tmp/shader.metallib', f'{pathlib.Path(__file__).parent}/descriptors.mtlp-json', '-o', '/tmp/shader.bin'])
 
     else:
       options = Metal.MTLCompileOptions.alloc().init()
